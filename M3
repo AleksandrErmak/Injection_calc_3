@@ -1,0 +1,495 @@
+Option Explicit
+Sub Main()
+Call Prodaction_Liq_by_react
+Call Inj_by_Obj
+Call Lim_Inj_by_Obj
+Call Lim_Inj
+Call Inj_with_Fact
+Call Inj_by_Obj_2
+End Sub
+
+Sub Prodaction_Liq_by_react()
+
+Dim Well As New Collection
+Dim Data As New Collection
+
+Dim rng As Range
+Dim rng_well As Range
+Dim rng_data As Range
+
+Dim Inj As Worksheet
+Dim React As Worksheet
+Dim Prod_V As Worksheet
+Dim Sum_Prod_V_by_react_well As Worksheet
+
+
+Set Inj = ThisWorkbook.Worksheets("Необходимая Закачка, м3")
+Set React = ThisWorkbook.Worksheets("Реагирующие")
+Set Prod_V = ThisWorkbook.Worksheets("V ж пл, м3")
+Set Sum_Prod_V_by_react_well = ThisWorkbook.Worksheets("Q ж реагирующих")
+
+Set rng_well = Inj.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+Set rng_data = Inj.Range(Cells(1, 6).Address, Cells(1, Columns.Count).End(xlToLeft).Address)
+
+For Each rng In rng_well
+    Well.Add rng.Value
+Next
+
+For Each rng In rng_data
+    Data.Add rng.Value
+Next
+
+Dim i, j
+
+For j = 1 To Data.Count
+    For i = 1 To Well.Count
+    
+        Dim Temp_React As Variant
+        For Each Temp_React In React.Range(Cells(i + 1, 2).Address, Cells(i + 1, Columns.Count).End(xlToLeft).Address)
+            Dim Temp As Range
+            Set Temp = rng_well.Find(Temp_React, , xlValues, xlWhole, xlByColumns)
+            If Not Temp Is Nothing Then
+                Sum_Prod_V_by_react_well.Cells(i + 1, j + 5) = _
+                    Sum_Prod_V_by_react_well.Cells(i + 1, j + 5) + Prod_V.Cells(Temp.Row, j + 5)
+            End If
+        
+        Next
+    Next
+Next
+
+Debug.Print "Finish"
+
+End Sub
+
+Sub Inj_by_Obj()
+
+Dim Well As New Collection
+Dim Data As New Collection
+Dim Object As New Collection
+Dim Object_data As New Collection
+
+
+Dim rng As Range
+Dim rng_well As Range
+Dim rng_data As Range
+Dim rng_obj As Range
+Dim rng_obj_data As Range
+
+Dim Oil As Worksheet
+Dim Liq As Worksheet
+Dim Inj As Worksheet
+Dim React As Worksheet
+Dim Prod_V As Worksheet
+Dim Sum_Prod_V_by_react_well As Worksheet
+Dim Obj_data As Worksheet
+Dim Obj_Inj As Worksheet
+
+Set Oil = ThisWorkbook.Worksheets("Q нефть, т")
+Set Liq = ThisWorkbook.Worksheets("Q жидкость, т")
+Set Inj = ThisWorkbook.Worksheets("Необходимая Закачка, м3")
+Set React = ThisWorkbook.Worksheets("Реагирующие")
+Set Prod_V = ThisWorkbook.Worksheets("V ж пл, м3")
+Set Sum_Prod_V_by_react_well = ThisWorkbook.Worksheets("Q ж реагирующих")
+Set Obj_data = ThisWorkbook.Worksheets("Подключение объектов")
+Set Obj_Inj = ThisWorkbook.Worksheets("Объекты")
+
+Set rng_well = Inj.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+Set rng_data = Inj.Range(Cells(1, 6).Address, Cells(1, Columns.Count).End(xlToLeft).Address)
+Set rng_obj = Obj_Inj.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+Set rng_obj_data = Obj_data.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+
+For Each rng In rng_well
+    Well.Add rng.Value
+Next
+
+For Each rng In rng_data
+    Data.Add rng.Value
+Next
+
+For Each rng In rng_obj
+    Object.Add rng.Value
+Next
+
+For Each rng In rng_obj_data
+    Object_data.Add rng.Value
+Next
+
+Dim i, j, k, m
+
+For j = 1 To Data.Count
+    For i = 1 To Well.Count
+        Dim f As Integer
+        For m = 1 To Object_data.Count
+            If Inj.Cells(i + 1, 2) = Obj_data.Cells(m + 1, 1) _
+                And Obj_Inj.Cells(1, j + 5) >= Obj_data.Cells(m + 1, 3) Then
+                    f = m
+            End If
+        Next
+        For k = 1 To Object.Count
+            If Obj_Inj.Cells(k + 1, 1) = Obj_data.Cells(f + 1, 2) _
+                And Obj_Inj.Cells(k + 1, 2) = "Всего" Then
+                    Obj_Inj.Cells(k + 1, j + 5) = Obj_Inj.Cells(k + 1, j + 5) + Inj.Cells(i + 1, j + 5)
+            ElseIf Obj_Inj.Cells(k + 1, 1) = Obj_data.Cells(f + 1, 2) _
+                And Obj_Inj.Cells(k + 1, 2) = "Птв" Then
+                    Obj_Inj.Cells(k + 1, j + 5) = Obj_Inj.Cells(k + 1, j + 5) + _
+                        (Liq.Cells(i + 1, j + 5) + Oil.Cells(i + 1, j + 5)) / 1.007
+            End If
+        Next
+        f = 0
+    Next
+Next
+
+Debug.Print "Finish"
+
+End Sub
+
+    
+Sub Lim_Inj_by_Obj()
+
+
+Dim Well As New Collection
+Dim Data As New Collection
+Dim Object As New Collection
+Dim Object_data As New Collection
+
+Dim rng As Range
+Dim rng_well As Range
+Dim rng_data As Range
+Dim rng_obj As Range
+Dim rng_obj_data As Range
+
+Dim Oil As Worksheet
+Dim Liq As Worksheet
+Dim Inj As Worksheet
+Dim React As Worksheet
+Dim Prod_V As Worksheet
+Dim Sum_Prod_V_by_react_well As Worksheet
+Dim Obj_data As Worksheet
+Dim Obj_Inj As Worksheet
+Dim Obj_Lim As Worksheet
+Dim Obj_Lim_Inj As Worksheet
+Dim Obj_K_Lim_Inj As Worksheet
+
+Set Oil = ThisWorkbook.Worksheets("Q нефть, т")
+Set Liq = ThisWorkbook.Worksheets("Q жидкость, т")
+Set Inj = ThisWorkbook.Worksheets("Необходимая Закачка, м3")
+Set React = ThisWorkbook.Worksheets("Реагирующие")
+Set Prod_V = ThisWorkbook.Worksheets("V ж пл, м3")
+Set Sum_Prod_V_by_react_well = ThisWorkbook.Worksheets("Q ж реагирующих")
+Set Obj_data = ThisWorkbook.Worksheets("Подключение объектов")
+Set Obj_Inj = ThisWorkbook.Worksheets("Объекты")
+Set Obj_Lim = ThisWorkbook.Worksheets("Лимиты по объектам сут")
+Set Obj_Lim_Inj = ThisWorkbook.Worksheets("Лимитированная закачка")
+Set Obj_K_Lim_Inj = ThisWorkbook.Worksheets("К лимит по объектам")
+
+Set rng_well = Inj.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+Set rng_data = Inj.Range(Cells(1, 6).Address, Cells(1, Columns.Count).End(xlToLeft).Address)
+Set rng_obj = Obj_Inj.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+Set rng_obj_data = Obj_data.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+
+For Each rng In rng_well
+    Well.Add rng.Value
+Next
+
+For Each rng In rng_data
+    Data.Add rng.Value
+Next
+
+For Each rng In rng_obj
+    Object.Add rng.Value
+Next
+
+For Each rng In rng_obj_data
+    Object_data.Add rng.Value
+Next
+
+Dim i, j, k, m
+
+For j = 1 To Data.Count
+    For k = 1 To Object.Count
+        If Obj_Inj.Cells(k + 1, j + 5) <= _
+            (Obj_Lim.Cells(k + 1, j + 5) * (Obj_Lim.Cells(1, j + 6) - Obj_Lim.Cells(1, j + 5))) Then
+                Obj_Lim_Inj.Cells(k + 1, j + 5) = Obj_Inj.Cells(k + 1, j + 5)
+            Obj_K_Lim_Inj.Cells(k + 1, j + 5) = 1
+        Else
+        Obj_Lim_Inj.Cells(k + 1, j + 5) = _
+            (Obj_Lim.Cells(k + 1, j + 5) * (Obj_Lim.Cells(1, j + 6) - Obj_Lim.Cells(1, j + 5)))
+        Obj_K_Lim_Inj.Cells(k + 1, j + 5) = Obj_Lim_Inj.Cells(k + 1, j + 5) / Obj_Inj.Cells(k + 1, j + 5)
+        End If
+    Next
+Next
+            
+        
+Debug.Print "Finish"
+
+End Sub
+
+Sub Lim_Inj()
+
+Dim Well As New Collection
+Dim Data As New Collection
+Dim Object As New Collection
+Dim Object_data As New Collection
+
+
+Dim rng As Range
+Dim rng_well As Range
+Dim rng_data As Range
+Dim rng_obj As Range
+Dim rng_obj_data As Range
+
+Dim Oil As Worksheet
+Dim Liq As Worksheet
+Dim Inj As Worksheet
+Dim React As Worksheet
+Dim Prod_V As Worksheet
+Dim Sum_Prod_V_by_react_well As Worksheet
+Dim Obj_data As Worksheet
+Dim Obj_Inj As Worksheet
+Dim Lim_Inj_Well As Worksheet
+Dim Obj_K_Lim_Inj As Worksheet
+Dim Status As Worksheet
+
+Set Oil = ThisWorkbook.Worksheets("Q нефть, т")
+Set Liq = ThisWorkbook.Worksheets("Q жидкость, т")
+Set Inj = ThisWorkbook.Worksheets("Необходимая Закачка, м3")
+Set React = ThisWorkbook.Worksheets("Реагирующие")
+Set Prod_V = ThisWorkbook.Worksheets("V ж пл, м3")
+Set Sum_Prod_V_by_react_well = ThisWorkbook.Worksheets("Q ж реагирующих")
+Set Obj_data = ThisWorkbook.Worksheets("Подключение объектов")
+Set Obj_Inj = ThisWorkbook.Worksheets("Объекты")
+Set Lim_Inj_Well = ThisWorkbook.Worksheets("Закачка по скважинам")
+Set Obj_K_Lim_Inj = ThisWorkbook.Worksheets("К лимит по объектам")
+Set Status = ThisWorkbook.Worksheets("Состояние")
+
+Set rng_well = Inj.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+Set rng_data = Inj.Range(Cells(1, 6).Address, Cells(1, Columns.Count).End(xlToLeft).Address)
+Set rng_obj = Obj_Inj.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+Set rng_obj_data = Obj_data.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+
+For Each rng In rng_well
+    Well.Add rng.Value
+Next
+
+For Each rng In rng_data
+    Data.Add rng.Value
+Next
+
+For Each rng In rng_obj
+    Object.Add rng.Value
+Next
+
+For Each rng In rng_obj_data
+    Object_data.Add rng.Value
+Next
+
+Dim i, j, k, m
+
+For j = 1 To Data.Count
+    For i = 1 To Well.Count
+        Dim f As Integer
+        For m = 1 To Object_data.Count
+            If Inj.Cells(i + 1, 2) = Obj_data.Cells(m + 1, 1) _
+                And Obj_Inj.Cells(1, j + 5) >= Obj_data.Cells(m + 1, 3) Then
+                    f = m
+            End If
+        Next
+        For k = 1 To Object.Count
+            If Obj_Inj.Cells(k + 1, 1) = Obj_data.Cells(f + 1, 2) _
+                And Obj_Inj.Cells(k + 1, 2) = "Всего" Then
+                    Lim_Inj_Well.Cells(i + 1, j + 5) = Inj.Cells(i + 1, j + 5) * _
+                        Obj_K_Lim_Inj.Cells(k + 1, j + 5) * Status.Cells(k + 1, j + 5)
+            End If
+        Next
+        f = 0
+    Next
+Next
+
+Debug.Print "Finish"
+
+End Sub
+
+Sub Inj_with_Fact()
+
+Dim Well As New Collection
+Dim Data As New Collection
+Dim Object As New Collection
+Dim Object_data As New Collection
+
+
+Dim rng As Range
+Dim rng_well As Range
+Dim rng_data As Range
+Dim rng_obj As Range
+Dim rng_obj_data As Range
+
+Dim Oil As Worksheet
+Dim Liq As Worksheet
+Dim Inj As Worksheet
+Dim React As Worksheet
+Dim Prod_V As Worksheet
+Dim Sum_Prod_V_by_react_well As Worksheet
+Dim Obj_data As Worksheet
+Dim Obj_Inj As Worksheet
+Dim Lim_Inj_Well As Worksheet
+Dim Obj_K_Lim_Inj As Worksheet
+Dim Status As Worksheet
+Dim Fact As Worksheet
+Dim Cal_Inj_And_Fact As Worksheet
+
+Set Oil = ThisWorkbook.Worksheets("Q нефть, т")
+Set Liq = ThisWorkbook.Worksheets("Q жидкость, т")
+Set Inj = ThisWorkbook.Worksheets("Необходимая Закачка, м3")
+Set React = ThisWorkbook.Worksheets("Реагирующие")
+Set Prod_V = ThisWorkbook.Worksheets("V ж пл, м3")
+Set Sum_Prod_V_by_react_well = ThisWorkbook.Worksheets("Q ж реагирующих")
+Set Obj_data = ThisWorkbook.Worksheets("Подключение объектов")
+Set Obj_Inj = ThisWorkbook.Worksheets("Объекты")
+Set Lim_Inj_Well = ThisWorkbook.Worksheets("Закачка по скважинам")
+Set Obj_K_Lim_Inj = ThisWorkbook.Worksheets("К лимит по объектам")
+Set Status = ThisWorkbook.Worksheets("Состояние")
+Set Fact = ThisWorkbook.Worksheets("Факт")
+Set Cal_Inj_And_Fact = ThisWorkbook.Worksheets("Расчет закачки с учетом факта")
+
+Set rng_well = Inj.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+Set rng_data = Inj.Range(Cells(1, 6).Address, Cells(1, Columns.Count).End(xlToLeft).Address)
+Set rng_obj = Obj_Inj.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+Set rng_obj_data = Obj_data.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+
+For Each rng In rng_well
+    Well.Add rng.Value
+Next
+
+For Each rng In rng_data
+    Data.Add rng.Value
+Next
+
+For Each rng In rng_obj
+    Object.Add rng.Value
+Next
+
+For Each rng In rng_obj_data
+    Object_data.Add rng.Value
+Next
+
+Dim i, j, k, m
+
+For j = 1 To Data.Count
+    For i = 1 To Well.Count
+        If Cal_Inj_And_Fact.Cells(1, j + 5) < Cal_Inj_And_Fact.Cells(2, 5) Then
+            Cal_Inj_And_Fact.Cells(i + 1, j + 5) = Fact.Cells(i + 1, j + 5)
+        Else
+        Cal_Inj_And_Fact.Cells(i + 1, j + 5) = Lim_Inj_Well.Cells(i + 1, j + 5)
+        End If
+    Next
+Next
+
+For i = 1 To Well.Count
+    Dim p As Long
+    p = 0
+    For j = 1 To Data.Count
+        
+        If Cal_Inj_And_Fact.Cells(1, j + 5) >= Cal_Inj_And_Fact.Cells(2, 5) Then
+            Dim l As Integer
+            If Cal_Inj_And_Fact.Cells(1, j + 5) = Cal_Inj_And_Fact.Cells(2, 5) Then
+                l = j + 5
+            End If
+            If Cal_Inj_And_Fact.Cells(i + 1, j + 5 - 1) > 0 _
+                And Cal_Inj_And_Fact.Cells(i + 1, j + 5) > 0 Then
+                    p = Cal_Inj_And_Fact.Cells(i + 1, j + 5 + 5) - Cal_Inj_And_Fact.Cells(i + 1, j + 5 - 1)
+                    Cal_Inj_And_Fact.Cells(i + 1, j + 5) = Cal_Inj_And_Fact.Cells(i + 1, j + 5 - 1) + p * (j + 5 - l + 1) / 6
+            End If
+        End If
+    Next
+    l = 0
+Next
+
+Debug.Print "Finish"
+
+End Sub
+
+Sub Inj_by_Obj_2()
+
+Dim Well As New Collection
+Dim Data As New Collection
+Dim Object As New Collection
+Dim Object_data As New Collection
+
+
+Dim rng As Range
+Dim rng_well As Range
+Dim rng_data As Range
+Dim rng_obj As Range
+Dim rng_obj_data As Range
+
+Dim Oil As Worksheet
+Dim Liq As Worksheet
+Dim Inj As Worksheet
+Dim React As Worksheet
+Dim Prod_V As Worksheet
+Dim Sum_Prod_V_by_react_well As Worksheet
+Dim Obj_data As Worksheet
+Dim Obj_Inj As Worksheet
+Dim Cal_Inj_And_Fact As Worksheet
+Dim Obj_Inj_2 As Worksheet
+
+Set Oil = ThisWorkbook.Worksheets("Q нефть, т")
+Set Liq = ThisWorkbook.Worksheets("Q жидкость, т")
+Set Inj = ThisWorkbook.Worksheets("Необходимая Закачка, м3")
+Set React = ThisWorkbook.Worksheets("Реагирующие")
+Set Prod_V = ThisWorkbook.Worksheets("V ж пл, м3")
+Set Sum_Prod_V_by_react_well = ThisWorkbook.Worksheets("Q ж реагирующих")
+Set Obj_data = ThisWorkbook.Worksheets("Подключение объектов")
+Set Obj_Inj = ThisWorkbook.Worksheets("Объекты")
+Set Cal_Inj_And_Fact = ThisWorkbook.Worksheets("Расчет закачки с учетом факта")
+Set Obj_Inj_2 = ThisWorkbook.Worksheets("Расчет распред по объектам")
+
+Set rng_well = Inj.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+Set rng_data = Inj.Range(Cells(1, 6).Address, Cells(1, Columns.Count).End(xlToLeft).Address)
+Set rng_obj = Obj_Inj.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+Set rng_obj_data = Obj_data.Range(Cells(2, 1).Address, Cells(Rows.Count, 1).End(xlUp).Address)
+
+For Each rng In rng_well
+    Well.Add rng.Value
+Next
+
+For Each rng In rng_data
+    Data.Add rng.Value
+Next
+
+For Each rng In rng_obj
+    Object.Add rng.Value
+Next
+
+For Each rng In rng_obj_data
+    Object_data.Add rng.Value
+Next
+
+Dim i, j, k, m
+
+For j = 1 To Data.Count
+    For i = 1 To Well.Count
+        Dim f As Integer
+        For m = 1 To Object_data.Count
+            If Cal_Inj_And_Fact.Cells(i + 1, 2) = Obj_data.Cells(m + 1, 1) _
+                And Cal_Inj_And_Fact.Cells(1, j + 5) >= Obj_data.Cells(m + 1, 3) Then
+                    f = m
+            End If
+        Next
+        For k = 1 To Object.Count
+            If Obj_Inj_2.Cells(k + 1, 1) = Obj_data.Cells(f + 1, 2) _
+                And Obj_Inj_2.Cells(k + 1, 2) = "Всего" Then
+                    Obj_Inj_2.Cells(k + 1, j + 5) = Obj_Inj_2.Cells(k + 1, j + 5) + Cal_Inj_And_Fact.Cells(i + 1, j + 5)
+            ElseIf Obj_Inj_2.Cells(k + 1, 1) = Obj_data.Cells(f + 1, 2) _
+                And Obj_Inj_2.Cells(k + 1, 2) = "Птв" Then
+                    Obj_Inj_2.Cells(k + 1, j + 5) = Obj_Inj_2.Cells(k + 1, j + 5) + _
+                        (Liq.Cells(i + 1, j + 5) + Oil.Cells(i + 1, j + 5)) / 1.007
+            End If
+        Next
+        f = 0
+    Next
+Next
+
+Debug.Print "Finish"
+
+End Sub
